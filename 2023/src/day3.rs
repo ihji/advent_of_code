@@ -51,6 +51,26 @@ fn get_adj_symbols(mat: &Vec<Vec<char>>, (i, j): (i32, i32)) -> Vec<Sym> {
     ]
 }
 
+fn eval(
+    adj: &mut HashSet<Sym>,
+    numbers: &mut String,
+    sum: &mut i32,
+    stars: &mut HashMap<(usize, usize), Vec<i32>>,
+) {
+    if adj.iter().any(|x| x.is_symbol()) {
+        let n: i32 = numbers.parse().unwrap();
+        *sum += n;
+        adj.iter().for_each(|x| match x {
+            Sym::Star { x, y } => {
+                stars.entry((*x, *y)).or_insert(Vec::new()).push(n);
+            }
+            _ => (),
+        });
+        adj.clear();
+    }
+    numbers.clear();
+}
+
 pub fn _day3() {
     let contents = read_to_string("src/input3.txt").unwrap();
     let mat: Vec<Vec<char>> = contents.lines().map(|x| x.chars().collect()).collect();
@@ -64,33 +84,11 @@ pub fn _day3() {
                 numbers.push(*c);
                 adj.extend(get_adj_symbols(&mat, (i as i32, j as i32)));
             } else if numbers.len() > 0 {
-                if adj.iter().any(|x| x.is_symbol()) {
-                    let n: i32 = numbers.parse().unwrap();
-                    sum += n;
-                    adj.iter().for_each(|x| match x {
-                        Sym::Star { x, y } => {
-                            stars.entry((*x, *y)).or_insert(Vec::new()).push(n);
-                        }
-                        _ => (),
-                    });
-                    adj.clear();
-                }
-                numbers.clear();
+                eval(&mut adj, &mut numbers, &mut sum, &mut stars);
             }
         }
         if numbers.len() > 0 {
-            if adj.iter().any(|x| x.is_symbol()) {
-                let n: i32 = numbers.parse().unwrap();
-                sum += n;
-                adj.iter().for_each(|x| match x {
-                    Sym::Star { x, y } => {
-                        stars.entry((*x, *y)).or_insert(Vec::new()).push(n);
-                    }
-                    _ => (),
-                });
-                adj.clear();
-            }
-            numbers.clear();
+            eval(&mut adj, &mut numbers, &mut sum, &mut stars);
         }
     }
     println!("day 3 part 1: {}", sum);
