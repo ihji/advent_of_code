@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::read_to_string;
 
-pub fn day1() {
+pub fn _day1() {
     let contents = read_to_string("src/input1.txt").unwrap();
 
     let mut sum = 0;

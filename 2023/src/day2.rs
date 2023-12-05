@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::fs::read_to_string;
 
-pub fn day2() -> Option<()> {
+pub fn _day2() -> Option<()> {
     fn get_numbers(line: &str) -> (i32, i32, i32) {
         let red = Regex::new(r"(\d+) red").unwrap();
         let green = Regex::new(r"(\d+) green").unwrap();
