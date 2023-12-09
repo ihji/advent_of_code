@@ -2,7 +2,13 @@ use std::fs::read_to_string;
 
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+struct Interval {
+    from: i64,
+    to: i64,
+}
+
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 struct Mapping {
     src: i64,
     dst: i64,
@@ -15,16 +21,53 @@ struct Map {
 }
 
 impl Map {
-    fn new(mapping: Vec<Mapping>) -> Self {
+    fn new(mut mapping: Vec<Mapping>) -> Self {
+        mapping.sort();
         Self { mapping }
     }
-    fn get(&self, src: i64) -> i64 {
+    fn map(src: i64, m: &Mapping) -> i64 {
+        if src >= m.src && src < m.src + m.len {
+            return m.dst + src - m.src;
+        } else {
+            return src;
+        }
+    }
+    fn get(&self, mut src: Interval) -> Vec<Interval> {
+        let mut output = vec![];
         for m in self.mapping.iter() {
-            if src >= m.src && src < m.src + m.len {
-                return m.dst + src - m.src;
+            // <m> [src]
+            if src.from >= m.src + m.len {
+                continue;
+            }
+            // [ < ] >
+            if m.src > src.from && m.src <= src.to {
+                let min = src.to.min(m.src - 1);
+                output.push(Interval {
+                    from: src.from,
+                    to: min,
+                });
+                src.from = min + 1;
+            }
+            // < [ > ]
+            if src.from >= m.src && src.from < m.src + m.len {
+                let min = src.to.min(m.src + m.len - 1);
+                output.push(Interval {
+                    from: Self::map(src.from, m),
+                    to: Self::map(min, m),
+                });
+                src.from = min + 1;
+            }
+            if src.from > src.to {
+                return output;
             }
         }
-        return src;
+        if src.from <= src.to {
+            output.push(Interval {
+                from: src.from,
+                to: src.to,
+            });
+        }
+        return output;
     }
 }
 
@@ -72,13 +115,24 @@ humidity-to-location map:((\d|\s)+)",
         .split(' ')
         .map(|x| x.parse().unwrap())
         .collect();
-    let mut min_location = i64::MAX;
-    for seed in seeds {
-        let mut location = seed;
-        for m in maps.iter() {
-            location = m.get(location);
-        }
-        min_location = min_location.min(location);
+    let mut location: Vec<Interval> = seeds
+        .iter()
+        .map(|x| Interval { from: *x, to: *x })
+        .collect();
+    let mut location2: Vec<Interval> = seeds
+        .chunks(2)
+        .map(|x| Interval {
+            from: x[0],
+            to: x[0] + x[1] - 1,
+        })
+        .collect();
+    for m in maps.iter() {
+        location = location.into_iter().flat_map(|x| m.get(x)).collect();
+        location2 = location2.into_iter().flat_map(|x| m.get(x)).collect();
     }
-    println!("day 5 part 1: {}", min_location);
+    location.sort();
+    location2.sort();
+
+    println!("day 5 part 1: {}", location[0].from);
+    println!("day 5 part 2: {}", location2[0].from);
 }
